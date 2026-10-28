@@ -1,6 +1,6 @@
 import pytest
 from gateway.adapters.snowflake import query_customer_record
-from gateway.dlp import redact_sensitive_payload
+from gateway.dlp import redact_sensitive_payload, mask_text
 
 def test_snowflake_query_raw():
     record = query_customer_record("CUST-9921")
@@ -28,3 +28,9 @@ def test_dlp_allows_email_for_admin_but_masks_financials():
     assert sanitized["ssn"] == "[REDACTED_SSN]"
     assert sanitized["email"] == "jordan.hayes@example.com"
     assert sanitized["phone"] == "+1-555-019-2834"
+
+def test_iban_masked_for_non_admin():
+    masked, count = mask_text("Account GB82WEST12345698765432", is_admin=False)
+    assert "[REDACTED_IBAN]" in masked
+    assert "GB82WEST12345698765432" not in masked
+    assert count == 1

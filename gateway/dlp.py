@@ -16,6 +16,7 @@ PATTERN_CREDIT_CARD = r"\b(?:\d{4}[-\s]?){3}\d{4}\b"
 PATTERN_SSN = r"\b\d{3}-\d{2}-\d{4}\b"
 PATTERN_EMAIL = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,7}\b"
 PATTERN_PHONE = r"\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"
+PATTERN_IBAN = r"\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b"
 
 
 def mask_text(
@@ -36,7 +37,11 @@ def mask_text(
     # 2. SSN Redaction (Universal)
     val, ssn_count = re.subn(PATTERN_SSN, "[REDACTED_SSN]", val)
     total_redactions += ssn_count
-
+    
+    # 2.5. IBAN Redaction (Universal). Must run before the phone pattern.
+    val, iban_count = re.subn(PATTERN_IBAN, "[REDACTED_IBAN]", val)
+    total_redactions += iban_count
+    
     # 3. Non-admin masking for Contact Info (Email / Phone)
     if not is_admin:
         val, email_count = re.subn(PATTERN_EMAIL, "[REDACTED_EMAIL]", val)
