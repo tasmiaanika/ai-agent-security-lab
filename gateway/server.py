@@ -24,7 +24,7 @@ app = FastAPI(
 security = HTTPBearer()
 
 # Flexible environment variable evaluation for local vs Cloud Build environments
-PROJECT_ID = os.getenv("GCP_PROJECT_ID") or os.getenv("PROJECT_ID", "project-a661dfac-6f3d-4776-a43")
+PROJECT_ID = os.getenv("GCP_PROJECT_ID") or os.getenv("PROJECT_ID", "project_id")
 LOCATION = os.getenv("GCP_LOCATION") or os.getenv("LOCATION", "us-central1")
 MODEL_ARMOR_ENDPOINT = f"modelarmor.{LOCATION}.rep.googleapis.com"
 TEMPLATE_PATH = f"projects/{PROJECT_ID}/locations/{LOCATION}/templates/retail-agent-defense"
@@ -98,6 +98,15 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
         )
         return claims
     except JWTError as exc:
+        log_audit_event(
+            event_type="SECURITY_AUTHENTICATION_FAILED",
+            severity="WARNING",
+            principal="unknown",
+            groups=[],
+            action="token_verification",
+            status="DENIED_INVALID_TOKEN",
+            details={"reason": str(exc)},
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid or expired OIDC token: {str(exc)}",
